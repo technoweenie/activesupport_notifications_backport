@@ -109,30 +109,34 @@ module ActiveSupport
     autoload :Event, File.expand_path('../notifications/instrumenter', __FILE__)
     autoload :Fanout, File.expand_path('../notifications/fanout', __FILE__)
 
-    @instrumenters = Hash.new { |h,k| h[k] = notifier.listening?(k) }
+    class Service
+      attr_reader :notifier, :instrumenter
 
-    class << self
-      attr_accessor :notifier
+      def initialize(notifier)
+        @notifier = notifier
+        @instrumenter = Instrumenter.new(notifier)
+        @instrumenters = Hash.new { |h,k| h[k] = notifier.listening?(k) }
+      end
 
       def publish(name, *args)
-        notifier.publish(name, *args)
+        @notifier.publish(name, *args)
       end
 
       def instrument(name, payload = {})
         if @instrumenters[name]
-          instrumenter.instrument(name, payload) { yield payload if block_given? }
+          @instrumenter.instrument(name, payload) { yield payload if block_given? }
         else
           yield payload if block_given?
         end
       end
 
       def subscribe(*args, &block)
-        notifier.subscribe(*args, &block).tap do
+        @notifier.subscribe(*args, &block).tap do
           @instrumenters.clear
         end
       end
 
-      def subscribed(callback, *args, &block)
+      def subscribed(callback, *args)
         subscriber = subscribe(*args, &callback)
         yield
       ensure
@@ -140,12 +144,44 @@ module ActiveSupport
       end
 
       def unsubscribe(args)
-        notifier.unsubscribe(args)
+        @notifier.unsubscribe(args)
         @instrumenters.clear
+      end
+    end
+
+    class << self
+      attr_accessor :notifier
+
+      def publish(name, *args)
+        service.publish(name, *args)
+      end
+
+      def instrument(name, payload = {}, &block)
+        service.instrument(name, payload, &block)
+      end
+
+      def subscribe(*args, &block)
+        service.subscribe(*args, &block)
+      end
+
+      def subscribed(callback, *args, &block)
+        service.subscribed(callback, *args, &block)
+      end
+
+      def unsubscribe(args)
+        service.unsubscribe(args)
       end
 
       def instrumenter
-        Thread.current[:"instrumentation_#{notifier.object_id}"] ||= Instrumenter.new(notifier)
+        service.instrumenter
+      end
+
+      def notifier_thread_key
+        :"notifier_service_#{notifier.object_id}"
+      end
+
+      def service
+        Thread.current[notifier_thread_key] ||= Service.new(notifier)
       end
     end
 
