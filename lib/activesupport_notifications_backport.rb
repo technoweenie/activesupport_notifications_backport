@@ -4,7 +4,7 @@ if ActiveSupport::VERSION::MAJOR > 2
 end
 
 module ActiveSupportNotificationsBackport
-  VERSION = "0.0.1"
+  VERSION = "0.0.2"
 end
 
 require 'active_support/secure_random'
