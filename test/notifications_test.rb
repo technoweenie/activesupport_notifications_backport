@@ -1,4 +1,4 @@
-require 'abstract_unit'
+require File.expand_path('../abstract_unit', __FILE__)
 require 'active_support/core_ext/module/delegation'
 
 module Notifications

@@ -105,9 +105,9 @@ module ActiveSupport
   # to log subscribers in a thread. You can use any queue implementation you want.
   #
   module Notifications
-    autoload :Instrumenter, 'active_support/notifications/instrumenter'
-    autoload :Event, 'active_support/notifications/instrumenter'
-    autoload :Fanout, 'active_support/notifications/fanout'
+    autoload :Instrumenter, File.expand_path('../notifications/instrumenter', __FILE__)
+    autoload :Event, File.expand_path('../notifications/instrumenter', __FILE__)
+    autoload :Fanout, File.expand_path('../notifications/fanout', __FILE__)
 
     @instrumenters = Hash.new { |h,k| h[k] = notifier.listening?(k) }
 
