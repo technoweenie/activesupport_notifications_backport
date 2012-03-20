@@ -9,3 +9,4 @@ end
 
 require 'active_support/secure_random'
 require File.expand_path('../active_support/notifications', __FILE__)
+require File.expand_path('../active_support/log_subscriber', __FILE__)
