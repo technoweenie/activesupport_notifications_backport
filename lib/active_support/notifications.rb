@@ -124,7 +124,7 @@ module ActiveSupport
 
       def instrument(name, payload = {})
         if @instrumenters[name]
-          @instrumenter.instrument(name, payload) { yield payload if block_given? }
+         @instrumenter.instrument(name, payload) { yield payload if block_given? }
         else
           yield payload if block_given?
         end
@@ -147,10 +147,14 @@ module ActiveSupport
         @notifier.unsubscribe(args)
         @instrumenters.clear
       end
+
+      def instrumenter
+        Thread.current[:"instrumentation_#{@notifier.object_id}"] ||= Instrumenter.new(@notifier)
+      end
     end
 
     class << self
-      attr_accessor :notifier
+      attr_reader :service, :notifier
 
       def publish(name, *args)
         service.publish(name, *args)
@@ -176,12 +180,9 @@ module ActiveSupport
         service.instrumenter
       end
 
-      def notifier_thread_key
-        :"notifier_service_#{notifier.object_id}"
-      end
-
-      def service
-        Thread.current[notifier_thread_key] ||= Service.new(notifier)
+      def notifier=(value)
+        @service = Service.new(value)
+        @notifier = value
       end
     end
 
